@@ -1,5 +1,12 @@
+import 'package:budget_tracker/features/add_transaction/add_transaction_screen.dart';
+import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
+import 'package:budget_tracker/features/manage_categories/manage_categories_screen.dart';
+import 'package:budget_tracker/features/manage_budgets/manage_budgets_screen.dart';
+import 'package:budget_tracker/features/manage_goals/manage_goals_screen.dart';
+import 'package:budget_tracker/features/reporting/reporting_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 //import 'package:budgeting_app/core/theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -100,11 +107,71 @@ class _HeaderRow extends StatelessWidget {
             color: AppColors.primaryColor,
           ),
         ),
-        const CircleAvatar(
-          radius: 22,
-          backgroundImage: AssetImage(
-            'assets/avatar.png',
-          ), // Replace with your asset
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageCategoriesScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.category,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageBudgetsScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.account_balance,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageGoalsScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.flag,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReportingScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.pie_chart,
+                color: Colors.white,
+              ),
+            ),
+            // const CircleAvatar(
+            //   radius: 22,
+            //   backgroundImage: AssetImage(
+            //     'assets/avatar.png',
+            //   ), // Replace with your asset
+            // ),
+          ],
         ),
       ],
     );
@@ -192,18 +259,68 @@ class _SummaryCardsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        _SummaryCard(
-          title: 'Monthly Expenses',
-          value: ' 243,891.12',
-          chart: true,
+    return Column(
+      children: [
+        BlocBuilder<BudgetBloc, BudgetState>(
+          builder: (context, state) {
+            if (state is BudgetLoaded) {
+              final totalBudget = state.budgets.fold<double>(
+                  0, (previousValue, budget) => previousValue + budget.amount);
+              final totalSpending = state.budgets.fold<double>(
+                  0,
+                  (previousValue, budget) =>
+                      previousValue + budget.spentAmount);
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _SummaryCard(
+                    title: 'Total Budget',
+                    value: '\$${totalBudget.toStringAsFixed(2)}',
+                    chart: true,
+                  ),
+                  const SizedBox(width: 12),
+                  _SummaryCard(
+                      title: 'Total Spending',
+                      value: '\$${totalSpending.toStringAsFixed(2)}'),
+                ],
+              );
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                _SummaryCard(
+                  title: 'Total Budget',
+                  value: '\$0.00',
+                  chart: true,
+                ),
+                SizedBox(width: 12),
+                _SummaryCard(title: 'Total Spending', value: '\$0.00'),
+              ],
+            );
+          },
         ),
-        SizedBox(width: 12),
-        _SummaryCard(title: 'Weekly Spending', value: ' 276.95'),
-        SizedBox(width: 12),
-        _SummaryCard(title: 'Coin Balance', value: '408'),
+        const SizedBox(height: 12),
+        BlocBuilder<GoalBloc, GoalState>(
+          builder: (context, state) {
+            if (state is GoalLoaded) {
+              final totalTargetAmount = state.goals.fold<double>(0,
+                  (previousValue, goal) => previousValue + goal.targetAmount);
+              final totalCurrentAmount = state.goals.fold<double>(
+                  0,
+                  (previousValue, goal) =>
+                      previousValue + goal.currentAmount);
+              return _SummaryCard(
+                title: 'Goal Progress',
+                value:
+                    '\$${totalCurrentAmount.toStringAsFixed(2)} / \$${totalTargetAmount.toStringAsFixed(2)}',
+              );
+            }
+            return const _SummaryCard(
+              title: 'Goal Progress',
+              value: '\$0.00 / \$0.00',
+            );
+          },
+        ),
       ],
     );
   }
@@ -317,27 +434,41 @@ class _RecentActivitySection extends StatelessWidget {
         Text(
           'Recent Activity',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.bold,
-          ),
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 12),
-        _ActivityTile(
-          icon: Icons.account_balance_wallet,
-          iconBg: Color(0xFFB6F09C),
-          title: 'Money Received',
-          subtitle: 'Today 12:09',
-          amount: '+526.00',
-          amountColor: Color(0xFF34C759),
-        ),
-        const SizedBox(height: 10),
-        _ActivityTile(
-          icon: Icons.compare_arrows,
-          iconBg: Color(0xFFFED766),
-          title: 'Bank Transfer',
-          subtitle: '08 Jan 23:12',
-          amount: '-19.33',
-          amountColor: Color(0xFFFF3B30),
+        BlocBuilder<TransactionBloc, TransactionState>(
+          builder: (context, state) {
+            if (state is TransactionLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is TransactionLoaded) {
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: state.transactions.length,
+                itemBuilder: (context, index) {
+                  final transaction = state.transactions[index];
+                  return _ActivityTile(
+                    icon: Icons.account_balance_wallet,
+                    iconBg: const Color(0xFFB6F09C),
+                    title: transaction.title,
+                    subtitle: 'Today 12:09', // I will fix this later
+                    amount: '\$${transaction.amount.toStringAsFixed(2)}',
+                    amountColor:
+                        transaction.amount > 0 ? const Color(0xFF34C759) : const Color(0xFFFF3B30),
+                  );
+                },
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+              );
+            }
+            if (state is TransactionError) {
+              return Center(child: Text(state.message));
+            }
+            return const Center(child: Text('No transactions yet.'));
+          },
         ),
       ],
     );
@@ -508,10 +639,17 @@ class _CenterFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      onPressed: () {},
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AddTransactionScreen(),
+          ),
+        );
+      },
       backgroundColor: AppColors.primaryColor,
       elevation: 4,
-      child: const Icon(Icons.attach_money, size: 28),
+      child: const Icon(Icons.add, size: 28),
     );
   }
 }
