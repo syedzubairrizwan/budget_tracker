@@ -1,6 +1,12 @@
 import 'package:budget_tracker/core/theme.dart';
+import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
+import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
+import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
+import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
 import 'package:budget_tracker/homepage.dart';
+import 'package:budget_tracker/services/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,14 +15,37 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'budget_tracker',
-      debugShowCheckedModeBanner: false,
-      theme: appTheme,
-      home: const HomePage(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => TransactionBloc(
+            databaseService: DatabaseService.instance,
+          )..add(LoadTransactions()),
+        ),
+        BlocProvider(
+          create: (context) => CategoryBloc(
+            databaseService: DatabaseService.instance,
+          )..add(LoadCategories()),
+        ),
+        BlocProvider(
+          create: (context) => BudgetBloc(
+            databaseService: DatabaseService.instance,
+          )..add(LoadBudgets()),
+        ),
+        BlocProvider(
+          create: (context) => GoalBloc(
+            databaseService: DatabaseService.instance,
+          )..add(LoadGoals()),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'budget_tracker',
+        debugShowCheckedModeBanner: false,
+        theme: appTheme,
+        home: const HomePage(),
+      ),
     );
   }
 }
