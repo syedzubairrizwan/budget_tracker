@@ -5,7 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
 class AddGoalScreen extends StatefulWidget {
-  const AddGoalScreen({super.key});
+  final Goal? goal;
+  const AddGoalScreen({super.key, this.goal});
 
   @override
   _AddGoalScreenState createState() => _AddGoalScreenState();

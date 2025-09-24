@@ -2,10 +2,13 @@ import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/models/category.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:uuid/uuid.dart';
 
 class AddCategoryScreen extends StatefulWidget {
-  const AddCategoryScreen({super.key});
+  final Category? category;
+  const AddCategoryScreen({super.key, this.category});
 
   @override
   _AddCategoryScreenState createState() => _AddCategoryScreenState();
@@ -13,14 +16,24 @@ class AddCategoryScreen extends StatefulWidget {
 
 class _AddCategoryScreenState extends State<AddCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _iconController = TextEditingController();
+  late TextEditingController _nameController;
+  IconData? _icon;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.category?.name);
+    if (widget.category != null) {
+      _icon =
+          IconData(int.parse(widget.category!.icon), fontFamily: 'MaterialIcons');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Category'),
+        title: Text(widget.category == null ? 'Add Category' : 'Edit Category'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -40,39 +53,55 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                   return null;
                 },
               ),
-              TextFormField(
-                controller: _iconController,
-                decoration: const InputDecoration(
-                  labelText: 'Icon',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an icon';
-                  }
-                  return null;
-                },
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _pickIcon,
+                child: const Text('Pick Icon'),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
+                    if (_icon == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please pick an icon'),
+                        ),
+                      );
+                      return;
+                    }
                     final category = Category(
-                      id: const Uuid().v4(),
+                      id: widget.category?.id ?? const Uuid().v4(),
                       name: _nameController.text,
-                      icon: _iconController.text,
+                      icon: _icon!.codePoint.toString(),
                     );
-                    context
-                        .read<CategoryBloc>()
-                        .add(AddCategory(category: category));
+                    if (widget.category == null) {
+                      context
+                          .read<CategoryBloc>()
+                          .add(AddCategory(category: category));
+                    } else {
+                      context
+                          .read<CategoryBloc>()
+                          .add(UpdateCategory(category: category));
+                    }
                     Navigator.pop(context);
                   }
                 },
-                child: const Text('Add'),
+                child: Text(widget.category == null ? 'Add' : 'Update'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _pickIcon() async {
+    IconData? icon = await FlutterIconPicker.showIconPicker(context,
+        iconPackModes: [IconPack.material]);
+
+    setState(() {
+      _icon = icon;
+    });
   }
 }

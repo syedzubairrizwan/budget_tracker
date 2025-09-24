@@ -93,85 +93,99 @@ class _HeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(8),
-          child: const Icon(
-            Icons.grid_view_rounded,
-            color: AppColors.primaryColor,
-          ),
-        ),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageCategoriesScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(
-                Icons.category,
+            Container(
+              decoration: BoxDecoration(
                 color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: const Icon(
+                Icons.grid_view_rounded,
+                color: AppColors.primaryColor,
               ),
             ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageBudgetsScreen(),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ManageCategoriesScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.category,
+                    color: Colors.white,
                   ),
-                );
-              },
-              icon: const Icon(
-                Icons.account_balance,
-                color: Colors.white,
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageGoalsScreen(),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ManageBudgetsScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
                   ),
-                );
-              },
-              icon: const Icon(
-                Icons.flag,
-                color: Colors.white,
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ReportingScreen(),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ManageGoalsScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.flag,
+                    color: Colors.white,
                   ),
-                );
-              },
-              icon: const Icon(
-                Icons.pie_chart,
-                color: Colors.white,
-              ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReportingScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.pie_chart,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-            // const CircleAvatar(
-            //   radius: 22,
-            //   backgroundImage: AssetImage(
-            //     'assets/avatar.png',
-            //   ), // Replace with your asset
-            // ),
           ],
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          onChanged: (value) {
+            context.read<TransactionBloc>().add(SearchTransactions(query: value));
+          },
+          decoration: InputDecoration(
+            hintText: 'Search transactions...',
+            prefixIcon: const Icon(Icons.search),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
         ),
       ],
     );
@@ -276,7 +290,7 @@ class _SummaryCardsRow extends StatelessWidget {
                   _SummaryCard(
                     title: 'Total Budget',
                     value: '\$${totalBudget.toStringAsFixed(2)}',
-                    chart: true,
+                    progress: totalBudget > 0 ? totalSpending / totalBudget : 0,
                   ),
                   const SizedBox(width: 12),
                   _SummaryCard(
@@ -291,7 +305,7 @@ class _SummaryCardsRow extends StatelessWidget {
                 _SummaryCard(
                   title: 'Total Budget',
                   value: '\$0.00',
-                  chart: true,
+                  progress: 0,
                 ),
                 SizedBox(width: 12),
                 _SummaryCard(title: 'Total Spending', value: '\$0.00'),
@@ -313,11 +327,15 @@ class _SummaryCardsRow extends StatelessWidget {
                 title: 'Goal Progress',
                 value:
                     '\$${totalCurrentAmount.toStringAsFixed(2)} / \$${totalTargetAmount.toStringAsFixed(2)}',
+                progress: totalTargetAmount > 0
+                    ? totalCurrentAmount / totalTargetAmount
+                    : 0,
               );
             }
             return const _SummaryCard(
               title: 'Goal Progress',
               value: '\$0.00 / \$0.00',
+              progress: 0,
             );
           },
         ),
@@ -330,10 +348,13 @@ class _SummaryCard extends StatelessWidget {
   final String title;
   final String value;
   final bool chart;
+  final double? progress;
+
   const _SummaryCard({
     required this.title,
     required this.value,
     this.chart = false,
+    this.progress,
   });
 
   @override
@@ -346,7 +367,7 @@ class _SummaryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: .04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -358,17 +379,17 @@ class _SummaryCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textGrey,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: AppColors.textGrey,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               value,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: AppColors.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             if (chart)
               Padding(
@@ -379,6 +400,26 @@ class _SummaryCard extends StatelessWidget {
                     painter: _SimpleChartPainter(),
                     size: const Size(double.infinity, 32),
                   ),
+                ),
+              ),
+            if (progress != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                  tween: Tween<double>(
+                    begin: 0,
+                    end: progress,
+                  ),
+                  builder: (context, value, child) {
+                    return LinearProgressIndicator(
+                      value: value,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryColor),
+                    );
+                  },
                 ),
               ),
           ],
