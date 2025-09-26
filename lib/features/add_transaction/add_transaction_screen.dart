@@ -1,4 +1,5 @@
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
+import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,10 +9,10 @@ class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
 
   @override
-  _AddTransactionScreenState createState() => _AddTransactionScreenState();
+  AddTransactionScreenState createState() => AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
+class AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -61,7 +62,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 builder: (context, state) {
                   if (state is CategoryLoaded) {
                     return DropdownButtonFormField<String>(
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       hint: const Text('Select Category'),
                       items: state.categories.map((category) {
                         return DropdownMenuItem(

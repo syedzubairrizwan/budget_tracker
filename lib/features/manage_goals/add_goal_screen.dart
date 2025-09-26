@@ -9,10 +9,10 @@ class AddGoalScreen extends StatefulWidget {
   const AddGoalScreen({super.key, this.goal});
 
   @override
-  _AddGoalScreenState createState() => _AddGoalScreenState();
+  AddGoalScreenState createState() => AddGoalScreenState();
 }
 
-class _AddGoalScreenState extends State<AddGoalScreen> {
+class AddGoalScreenState extends State<AddGoalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _targetAmountController = TextEditingController();

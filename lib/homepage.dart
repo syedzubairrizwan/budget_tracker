@@ -1,7 +1,9 @@
 import 'package:budget_tracker/features/add_transaction/add_transaction_screen.dart';
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
+import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/manage_categories_screen.dart';
 import 'package:budget_tracker/features/manage_budgets/manage_budgets_screen.dart';
+import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/manage_goals_screen.dart';
 import 'package:budget_tracker/features/reporting/reporting_screen.dart';
 import 'package:flutter/material.dart';

@@ -9,10 +9,10 @@ class AddBudgetScreen extends StatefulWidget {
   const AddBudgetScreen({super.key});
 
   @override
-  _AddBudgetScreenState createState() => _AddBudgetScreenState();
+  AddBudgetScreenState createState() => AddBudgetScreenState();
 }
 
-class _AddBudgetScreenState extends State<AddBudgetScreen> {
+class AddBudgetScreenState extends State<AddBudgetScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
@@ -33,7 +33,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                 builder: (context, state) {
                   if (state is CategoryLoaded) {
                     return DropdownButtonFormField<String>(
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       hint: const Text('Select Category'),
                       items: state.categories.map((category) {
                         return DropdownMenuItem(
