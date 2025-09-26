@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/models/transaction.dart';
+import 'package:intl/intl.dart';
 
 class ReportingScreen extends StatelessWidget {
   const ReportingScreen({super.key});
@@ -34,6 +35,14 @@ class ReportingScreen extends StatelessWidget {
                   child: BarChart(
                     BarChartData(
                       barGroups: _generateBarGroups(state.transactions),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 300,
+                  child: LineChart(
+                    LineChartData(
+                      lineBarsData: _generateLineBarsData(state.transactions),
                     ),
                   ),
                 ),
@@ -93,5 +102,37 @@ class ReportingScreen extends StatelessWidget {
         ],
       );
     }).toList();
+  }
+
+  List<LineChartBarData> _generateLineBarsData(List<Transaction> transactions) {
+    final Map<DateTime, double> spendingByDay = {};
+    for (var transaction in transactions) {
+      if (transaction.amount < 0) {
+        final day = DateTime(
+            transaction.date.year, transaction.date.month, transaction.date.day);
+        spendingByDay.update(
+          day,
+          (value) => value + transaction.amount.abs(),
+          ifAbsent: () => transaction.amount.abs(),
+        );
+      }
+    }
+
+    final sortedSpendingByDay = spendingByDay.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return [
+      LineChartBarData(
+        spots: sortedSpendingByDay
+            .map((entry) => FlSpot(
+                entry.key.millisecondsSinceEpoch.toDouble(), entry.value))
+            .toList(),
+        isCurved: true,
+        color: Colors.blue,
+        barWidth: 3,
+        isStrokeCapRound: true,
+        belowBarData: BarAreaData(show: false),
+      ),
+    ];
   }
 }
