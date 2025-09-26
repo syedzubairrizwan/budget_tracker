@@ -5,12 +5,14 @@ import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
 import 'package:budget_tracker/homepage.dart';
 import 'package:budget_tracker/services/database_service.dart';
+import 'package:budget_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
+  await NotificationService().init();
   runApp(const MyApp());
 }
 
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => TransactionBloc(
             databaseService: DatabaseService.instance,
+            notificationService: NotificationService(),
           )..add(LoadTransactions()),
         ),
         BlocProvider(

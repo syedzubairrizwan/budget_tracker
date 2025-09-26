@@ -23,8 +23,34 @@ class ManageCategoriesScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final category = state.categories[index];
                 return ListTile(
-                  leading: Icon(Icons.category), // I will fix this later
+                  leading: Icon(IconData(int.parse(category.icon),
+                      fontFamily: 'MaterialIcons')),
                   title: Text(category.name),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  AddCategoryScreen(category: category),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          context
+                              .read<CategoryBloc>()
+                              .add(DeleteCategory(id: category.id));
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             );

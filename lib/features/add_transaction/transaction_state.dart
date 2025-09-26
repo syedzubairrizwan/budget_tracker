@@ -13,11 +13,12 @@ class TransactionLoading extends TransactionState {}
 
 class TransactionLoaded extends TransactionState {
   final List<Transaction> transactions;
+  final String? searchQuery;
 
-  const TransactionLoaded({required this.transactions});
+  const TransactionLoaded({required this.transactions, this.searchQuery});
 
   @override
-  List<Object> get props => [transactions];
+  List<Object> get props => [transactions, searchQuery ?? ''];
 }
 
 class TransactionError extends TransactionState {
