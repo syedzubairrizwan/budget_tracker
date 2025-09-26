@@ -2,8 +2,7 @@ import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/models/category.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_iconpicker/flutter_iconpicker.dart';
-import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+//import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:uuid/uuid.dart';
 
 class AddCategoryScreen extends StatefulWidget {
@@ -97,8 +96,56 @@ class AddCategoryScreenState extends State<AddCategoryScreen> {
   }
 
   void _pickIcon() async {
-    IconData? icon = await flutter_iconpicker.showIconPicker(context,
-        iconPackModes: [IconPack.material]);
+    // TODO: Replace with your icon picker implementation or use a supported package.
+    // For now, show a simple dialog with a few icons to pick from.
+    IconData? icon = await showDialog<IconData>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Pick an Icon'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, Icons.shopping_cart),
+            child: Row(
+              children: const [
+                Icon(Icons.shopping_cart),
+                SizedBox(width: 8),
+                Text('Shopping Cart'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, Icons.fastfood),
+            child: Row(
+              children: const [
+                Icon(Icons.fastfood),
+                SizedBox(width: 8),
+                Text('Fast Food'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, Icons.directions_car),
+            child: Row(
+              children: const [
+                Icon(Icons.directions_car),
+                SizedBox(width: 8),
+                Text('Car'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, Icons.home),
+            child: Row(
+              children: const [
+                Icon(Icons.home),
+                SizedBox(width: 8),
+                Text('Home'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
 
     setState(() {
       _icon = icon;
