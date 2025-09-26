@@ -11,10 +11,10 @@ class AddCategoryScreen extends StatefulWidget {
   const AddCategoryScreen({super.key, this.category});
 
   @override
-  _AddCategoryScreenState createState() => _AddCategoryScreenState();
+  AddCategoryScreenState createState() => AddCategoryScreenState();
 }
 
-class _AddCategoryScreenState extends State<AddCategoryScreen> {
+class AddCategoryScreenState extends State<AddCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   IconData? _icon;
@@ -97,7 +97,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   }
 
   void _pickIcon() async {
-    IconData? icon = await FlutterIconPicker.showIconPicker(context,
+    IconData? icon = await flutter_iconpicker.showIconPicker(context,
         iconPackModes: [IconPack.material]);
 
     setState(() {
