@@ -52,8 +52,12 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter an amount';
                   }
-                  if (double.tryParse(value) == null) {
+                  final amount = double.tryParse(value);
+                  if (amount == null) {
                     return 'Please enter a valid number';
+                  }
+                  if (amount <= 0) {
+                    return 'Please enter a positive amount';
                   }
                   return null;
                 },
