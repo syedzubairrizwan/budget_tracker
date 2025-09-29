@@ -10,7 +10,13 @@ import 'package:budget_tracker/features/manage_goals/manage_goals_screen.dart';
 import 'package:budget_tracker/features/reporting/reporting_screen.dart';
 import 'package:budget_tracker/features/charts/charts_screen.dart';
 import 'package:budget_tracker/features/settings/settings_screen.dart';
+import 'package:budget_tracker/features/subscriptions/subscription_bloc.dart';
+import 'package:budget_tracker/features/subscriptions/subscription_event.dart';
+import 'package:budget_tracker/features/subscriptions/subscriptions_screen.dart';
 import 'package:budget_tracker/features/profile/profile_screen.dart';
+import 'package:budget_tracker/features/insights/insight_bloc.dart';
+import 'package:budget_tracker/features/insights/insight_event.dart';
+import 'package:budget_tracker/features/insights/insights_section.dart';
 import 'package:budget_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
@@ -27,6 +33,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<InsightBloc>().add(LoadInsights());
+  }
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
@@ -68,6 +80,8 @@ class _HomePageState extends State<HomePage> {
                       _ActionButtonsRow(),
                       SizedBox(height: 24),
                       _SummaryCardsRow(),
+                      SizedBox(height: 24),
+                      InsightsSection(),
                       SizedBox(height: 24),
                       _RecentActivitySection(),
                       SizedBox(height: 80),
@@ -188,6 +202,21 @@ class _HeaderRow extends StatelessWidget {
                   },
                   icon: const Icon(
                     Icons.pie_chart,
+                    color: Colors.white,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    context.read<SubscriptionBloc>().add(LoadSubscriptions());
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SubscriptionsScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.subscriptions,
                     color: Colors.white,
                   ),
                 ),

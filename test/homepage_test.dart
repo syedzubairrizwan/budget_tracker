@@ -4,6 +4,9 @@ import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
+import 'package:budget_tracker/features/insights/insight_bloc.dart';
+import 'package:budget_tracker/features/insights/insight_state.dart';
+import 'package:budget_tracker/features/insights/insight_event.dart';
 import 'package:budget_tracker/homepage.dart';
 import 'package:budget_tracker/models/budget.dart';
 import 'package:budget_tracker/models/category.dart';
@@ -25,13 +28,16 @@ class MockBudgetBloc extends MockBloc<BudgetEvent, BudgetState>
 
 class MockGoalBloc extends MockBloc<GoalEvent, GoalState> implements GoalBloc {}
 
+class MockInsightBloc extends MockBloc<InsightEvent, InsightState> implements InsightBloc {}
+
 void main() {
   late MockTransactionBloc mockTransactionBloc;
   late MockCategoryBloc mockCategoryBloc;
   late MockBudgetBloc mockBudgetBloc;
   late MockGoalBloc mockGoalBloc;
+  late MockInsightBloc mockInsightBloc;
 
-  final testCategory = Category(id: '1', name: 'Groceries', icon: Icons.shopping_cart.codePoint);
+  final testCategory = Category(id: '1', name: 'Groceries', icon: Icons.shopping_cart.codePoint.toString());
   final testTransactions = [
     Transaction(
       id: '1',
@@ -56,9 +62,11 @@ void main() {
     mockCategoryBloc = MockCategoryBloc();
     mockBudgetBloc = MockBudgetBloc();
     mockGoalBloc = MockGoalBloc();
+    mockInsightBloc = MockInsightBloc();
 
     when(() => mockBudgetBloc.state).thenReturn(BudgetLoaded(budgets: []));
     when(() => mockGoalBloc.state).thenReturn(GoalLoaded(goals: []));
+    when(() => mockInsightBloc.state).thenReturn(const InsightLoaded(insights: []));
   });
 
   Widget createWidgetUnderTest() {
@@ -68,6 +76,7 @@ void main() {
         BlocProvider<CategoryBloc>.value(value: mockCategoryBloc),
         BlocProvider<BudgetBloc>.value(value: mockBudgetBloc),
         BlocProvider<GoalBloc>.value(value: mockGoalBloc),
+        BlocProvider<InsightBloc>.value(value: mockInsightBloc),
       ],
       child: const MaterialApp(
         home: HomePage(),
@@ -86,7 +95,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No transactions yet'), findsOneWidget);
-    expect(find.byType(ElevatedButton), findsOneWidget);
+    expect(find.widgetWithIcon(ElevatedButton, Icons.add), findsOneWidget);
   });
 
   testWidgets('displays transaction list and calculates balance correctly',

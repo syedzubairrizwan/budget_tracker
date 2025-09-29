@@ -18,7 +18,7 @@ class MockTransactionBloc extends MockBloc<TransactionEvent, TransactionState>
 void main() {
   late MockCategoryBloc mockCategoryBloc;
   late MockTransactionBloc mockTransactionBloc;
-  final testCategory = Category(id: '1', name: 'Food', icon: Icons.fastfood.codePoint);
+  final testCategory = Category(id: '1', name: 'Food', icon: Icons.fastfood.codePoint.toString());
   final testCategories = [testCategory];
 
   setUpAll(() {
@@ -38,6 +38,8 @@ void main() {
     mockTransactionBloc = MockTransactionBloc();
     when(() => mockCategoryBloc.state)
         .thenReturn(CategoryLoaded(categories: testCategories));
+    when(() => mockTransactionBloc.state)
+        .thenReturn(const TransactionLoaded(transactions: []));
   });
 
   Widget createWidgetUnderTest() {

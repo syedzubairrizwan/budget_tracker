@@ -1,6 +1,9 @@
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/models/transaction.dart';
+import 'package:budget_tracker/services/ai_service.dart';
+import 'package:budget_tracker/services/ocr_service.dart';
+import 'package:budget_tracker/services/transaction_analysis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -18,6 +21,141 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
   TransactionType _selectedType = TransactionType.expense;
+  final _ocrService = OcrService();
+  final _aiService = AiService();
+  final _analysisService = TransactionAnalysisService();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onTitleChanged);
+  }
+
+  @override
+  void dispose() {
+    _ocrService.dispose();
+    _titleController.removeListener(_onTitleChanged);
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _scanReceipt() async {
+    final text = await _ocrService.pickImageAndRecognizeText();
+    if (text != null) {
+      _parseTextAndPopulateFields(text);
+    }
+  }
+
+  void _parseTextAndPopulateFields(String text) {
+    // Simple regex to find the total amount. This can be improved.
+    final RegExp amountRegex = RegExp(r'Total[:\s]*\$?(\d+\.\d{2})');
+    final match = amountRegex.firstMatch(text);
+    if (match != null) {
+      final amount = match.group(1);
+      if (amount != null) {
+        setState(() {
+          _amountController.text = amount;
+        });
+      }
+    }
+
+    // You could add more parsing logic for title and date here
+    final lines = text.split('\n');
+    if (lines.isNotEmpty) {
+      _titleController.text = lines.first;
+    }
+  }
+
+  void _onTitleChanged() {
+    _predictCategory(_titleController.text);
+  }
+
+  Future<void> _predictCategory(String title) async {
+    if (title.isEmpty) {
+      return;
+    }
+    final categoryState = context.read<CategoryBloc>().state;
+    if (categoryState is CategoryLoaded) {
+      final predictedCategoryId =
+          await _aiService.predictCategory(title, categoryState.categories);
+      if (mounted && predictedCategoryId != null && predictedCategoryId != _selectedCategoryId) {
+        setState(() {
+          _selectedCategoryId = predictedCategoryId;
+        });
+      }
+    }
+  }
+
+  void _submitTransaction() {
+    if (_formKey.currentState!.validate()) {
+      final transaction = Transaction(
+        id: const Uuid().v4(),
+        title: _titleController.text,
+        amount: double.parse(_amountController.text),
+        date: DateTime.now(),
+        categoryId: _selectedCategoryId!,
+        type: _selectedType,
+      );
+      context
+          .read<TransactionBloc>()
+          .add(AddTransaction(transaction: transaction));
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _handleAddTransaction() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final newTransaction = Transaction(
+      id: const Uuid().v4(),
+      title: _titleController.text,
+      amount: double.parse(_amountController.text),
+      date: DateTime.now(),
+      categoryId: _selectedCategoryId!,
+      type: _selectedType,
+    );
+
+    final transactionState = context.read<TransactionBloc>().state;
+    if (transactionState is TransactionLoaded) {
+      final isDuplicate = await _analysisService.isPotentialDuplicate(
+        newTransaction,
+        transactionState.transactions,
+      );
+
+      if (isDuplicate && mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Potential Duplicate'),
+              content: const Text(
+                  'This looks like a duplicate transaction. Are you sure you want to add it?'),
+              actions: [
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: const Text('Add Anyway'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _submitTransaction();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        _submitTransaction();
+      }
+    } else {
+      _submitTransaction();
+    }
+  }
 
   IconData _getIconData(String iconName) {
     switch (iconName) {
@@ -200,24 +338,20 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final transaction = Transaction(
-                      id: const Uuid().v4(),
-                      title: _titleController.text,
-                      amount: double.parse(_amountController.text),
-                      date: DateTime.now(),
-                      categoryId: _selectedCategoryId!,
-                      type: _selectedType,
-                    );
-                    context
-                        .read<TransactionBloc>()
-                        .add(AddTransaction(transaction: transaction));
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Add'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _scanReceipt,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Scan Receipt'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _handleAddTransaction,
+                    child: const Text('Add'),
+                  ),
+                ],
               ),
             ],
           ),
