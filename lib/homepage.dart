@@ -8,6 +8,9 @@ import 'package:budget_tracker/models/category.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/manage_goals_screen.dart';
 import 'package:budget_tracker/features/reporting/reporting_screen.dart';
+import 'package:budget_tracker/features/charts/charts_screen.dart';
+import 'package:budget_tracker/features/settings/settings_screen.dart';
+import 'package:budget_tracker/features/profile/profile_screen.dart';
 import 'package:budget_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
@@ -31,44 +34,59 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: Stack(
-        children: [
-          const _GradientHeader(),
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    SizedBox(height: 12),
-                    _HeaderRow(),
-                    SizedBox(height: 24),
-                    _BalanceSection(),
-                    SizedBox(height: 20),
-                    _ActionButtonsRow(),
-                    SizedBox(height: 24),
-                    _SummaryCardsRow(),
-                    SizedBox(height: 24),
-                    _RecentActivitySection(),
-                    SizedBox(height: 80),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      body: _getBody(),
       bottomNavigationBar: _CustomBottomNavBar(
         selectedIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: const _CenterFAB(),
+      floatingActionButton: _selectedIndex == 0 ? const _CenterFAB() : null,
     );
+  }
+
+  Widget _getBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return Stack(
+          children: [
+            const _GradientHeader(),
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      SizedBox(height: 12),
+                      _HeaderRow(),
+                      SizedBox(height: 24),
+                      _BalanceSection(),
+                      SizedBox(height: 20),
+                      _ActionButtonsRow(),
+                      SizedBox(height: 24),
+                      _SummaryCardsRow(),
+                      SizedBox(height: 24),
+                      _RecentActivitySection(),
+                      SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      case 1:
+        return const ChartsScreen();
+      case 2:
+        return const SettingsScreen();
+      case 3:
+        return const ProfileScreen();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 }
 
@@ -292,6 +310,7 @@ class _SummaryCardsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         BlocBuilder<BudgetBloc, BudgetState>(
           builder: (context, state) {
@@ -365,19 +384,17 @@ class _SummaryCardsRow extends StatelessWidget {
 class _SummaryCard extends StatelessWidget {
   final String title;
   final String value;
-  final bool chart;
   final double? progress;
 
   const _SummaryCard({
     required this.title,
     required this.value,
-    this.chart = false,
     this.progress,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return Flexible(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -409,17 +426,6 @@ class _SummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            if (chart)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  height: 32,
-                  child: CustomPaint(
-                    painter: _SimpleChartPainter(),
-                    size: const Size(double.infinity, 32),
-                  ),
-                ),
-              ),
             if (progress != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -447,40 +453,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _SimpleChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = AppColors.primaryColor.withValues(alpha: 0.7)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-    final path = Path();
-    path.moveTo(0, size.height * 0.7);
-    path.quadraticBezierTo(
-      size.width * 0.3,
-      size.height * 0.2,
-      size.width * 0.6,
-      size.height * 0.8,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.8,
-      size.height * 0.6,
-      size.width,
-      size.height * 0.4,
-    );
-    canvas.drawPath(path, paint);
-    // Draw a yellow dot
-    final dotPaint =
-        Paint()
-          ..color = const Color(0xFFFED766)
-          ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width * 0.3, size.height * 0.2), 5, dotPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class _RecentActivitySection extends StatelessWidget {
   const _RecentActivitySection();
@@ -522,12 +494,12 @@ class _RecentActivitySection extends StatelessWidget {
                           orElse: () => Category(
                             id: '',
                             name: 'Unknown',
-                            icon: Icons.help.codePoint,
+                            icon: Icons.help.codePoint.toString(),
                           ),
                         );
                         return _ActivityTile(
                           icon: IconData(
-                            category.icon,
+                            int.tryParse(category.icon) ?? Icons.help.codePoint,
                             fontFamily: 'MaterialIcons',
                           ),
                           iconBg: Color(0xFFB6F09C),
@@ -578,14 +550,14 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'No transactions yet',
-            style: Theme.of(context).textTheme.headline6?.copyWith(
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.grey,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Add your first transaction to get started',
-            style: Theme.of(context).textTheme.bodyText2?.copyWith(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.grey,
                 ),
           ),

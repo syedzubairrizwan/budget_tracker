@@ -21,8 +21,13 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path,
+    final db = await openDatabase(path,
         version: 2, onCreate: _createDB, onUpgrade: _onUpgrade);
+    
+    // Check if categories exist, if not insert default ones
+    await _ensureDefaultCategories(db);
+    
+    return db;
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -73,6 +78,37 @@ CREATE TABLE goals (
   currentAmount $doubleType
 )
 ''');
+
+    // Insert default categories
+    await _insertDefaultCategories(db);
+  }
+
+  Future<void> _insertDefaultCategories(Database db) async {
+    final defaultCategories = [
+      {'id': 'food', 'name': 'Food & Dining', 'icon': 'restaurant'},
+      {'id': 'transport', 'name': 'Transportation', 'icon': 'directions_car'},
+      {'id': 'shopping', 'name': 'Shopping', 'icon': 'shopping_bag'},
+      {'id': 'entertainment', 'name': 'Entertainment', 'icon': 'movie'},
+      {'id': 'bills', 'name': 'Bills & Utilities', 'icon': 'receipt'},
+      {'id': 'health', 'name': 'Healthcare', 'icon': 'local_hospital'},
+      {'id': 'education', 'name': 'Education', 'icon': 'school'},
+      {'id': 'travel', 'name': 'Travel', 'icon': 'flight'},
+      {'id': 'income', 'name': 'Salary', 'icon': 'work'},
+      {'id': 'freelance', 'name': 'Freelance', 'icon': 'laptop'},
+      {'id': 'investment', 'name': 'Investment', 'icon': 'trending_up'},
+      {'id': 'other', 'name': 'Other', 'icon': 'more_horiz'},
+    ];
+
+    for (final category in defaultCategories) {
+      await db.insert('categories', category, conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+  }
+
+  Future<void> _ensureDefaultCategories(Database db) async {
+    final categories = await db.query('categories');
+    if (categories.isEmpty) {
+      await _insertDefaultCategories(db);
+    }
   }
 
   Future<void> insertTransaction(Transaction transaction) async {

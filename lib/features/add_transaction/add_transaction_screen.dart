@@ -19,6 +19,37 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedCategoryId;
   TransactionType _selectedType = TransactionType.expense;
 
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'directions_car':
+        return Icons.directions_car;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'movie':
+        return Icons.movie;
+      case 'receipt':
+        return Icons.receipt;
+      case 'local_hospital':
+        return Icons.local_hospital;
+      case 'school':
+        return Icons.school;
+      case 'flight':
+        return Icons.flight;
+      case 'work':
+        return Icons.work;
+      case 'laptop':
+        return Icons.laptop;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'more_horiz':
+        return Icons.more_horiz;
+      default:
+        return Icons.category;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,13 +119,44 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
               BlocBuilder<CategoryBloc, CategoryState>(
                 builder: (context, state) {
                   if (state is CategoryLoaded) {
+                    if (state.categories.isEmpty) {
+                      return Column(
+                        children: [
+                          const Text(
+                            'No categories available. Please add some categories first.',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              // Navigate to manage categories
+                            },
+                            child: const Text('Manage Categories'),
+                          ),
+                        ],
+                      );
+                    }
                     return DropdownButtonFormField<String>(
-                      initialValue: _selectedCategoryId,
+                      value: _selectedCategoryId,
                       hint: const Text('Select Category'),
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
                       items: state.categories.map((category) {
                         return DropdownMenuItem(
                           value: category.id,
-                          child: Text(category.name),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _getIconData(category.icon),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(category.name),
+                            ],
+                          ),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -108,6 +170,30 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                         }
                         return null;
                       },
+                    );
+                  } else if (state is CategoryLoading) {
+                    return const Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('Loading categories...'),
+                      ],
+                    );
+                  } else if (state is CategoryError) {
+                    return Column(
+                      children: [
+                        Text(
+                          'Error loading categories: ${state.message}',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<CategoryBloc>().add(LoadCategories());
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     );
                   }
                   return const CircularProgressIndicator();

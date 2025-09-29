@@ -96,7 +96,7 @@ class AddCategoryScreenState extends State<AddCategoryScreen> {
   }
 
   void _pickIcon() async {
-    // TODO: Replace with your icon picker implementation or use a supported package.
+    // TODO:Replace with your icon picker implementation or use a supported package.
     // For now, show a simple dialog with a few icons to pick from.
     IconData? icon = await showDialog<IconData>(
       context: context,

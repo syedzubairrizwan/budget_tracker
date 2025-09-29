@@ -769,10 +769,10 @@ packages:
     dependency: transitive
     description:
       name: system_info2
-      sha256: "65206bbef475217008b5827374767550a5420ce70a04d2d7e94d1d2253f3efc9"
+      sha256: b937736ecfa63c45b10dde1ceb6bb30e5c0c340e14c441df024150679d65ac43
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0"
+    version: "4.1.0"
   term_glyph:
     dependency: transitive
     description:
