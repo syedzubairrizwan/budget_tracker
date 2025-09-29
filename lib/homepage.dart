@@ -1,14 +1,18 @@
 import 'package:budget_tracker/features/add_transaction/add_transaction_screen.dart';
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
+import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/manage_categories_screen.dart';
 import 'package:budget_tracker/features/manage_budgets/manage_budgets_screen.dart';
+import 'package:budget_tracker/models/category.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/manage_goals_screen.dart';
 import 'package:budget_tracker/features/reporting/reporting_screen.dart';
+import 'package:budget_tracker/models/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 //import 'package:budgeting_app/core/theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -199,26 +203,38 @@ class _BalanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Balance',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          ' 2414,518.09',
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 38,
-          ),
-        ),
-      ],
+    return BlocBuilder<TransactionBloc, TransactionState>(
+      builder: (context, state) {
+        final balance = state is TransactionLoaded
+            ? state.transactions.fold<double>(0, (prev, tr) {
+                return tr.type == TransactionType.income
+                    ? prev + tr.amount
+                    : prev - tr.amount;
+              })
+            : 0.0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Balance',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              NumberFormat.currency(symbol: '\$').format(balance),
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 38,
+                  ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -483,37 +499,111 @@ class _RecentActivitySection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         BlocBuilder<TransactionBloc, TransactionState>(
-          builder: (context, state) {
-            if (state is TransactionLoading) {
+          builder: (context, transactionState) {
+            if (transactionState is TransactionLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (state is TransactionLoaded) {
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: state.transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = state.transactions[index];
-                  return _ActivityTile(
-                    icon: Icons.account_balance_wallet,
-                    iconBg: const Color(0xFFB6F09C),
-                    title: transaction.title,
-                    subtitle: 'Today 12:09', // I will fix this later
-                    amount: '\$${transaction.amount.toStringAsFixed(2)}',
-                    amountColor:
-                        transaction.amount > 0 ? const Color(0xFF34C759) : const Color(0xFFFF3B30),
-                  );
+            if (transactionState is TransactionLoaded) {
+              if (transactionState.transactions.isEmpty) {
+                return const _EmptyState();
+              }
+              return BlocBuilder<CategoryBloc, CategoryState>(
+                builder: (context, categoryState) {
+                  if (categoryState is CategoryLoaded) {
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: transactionState.transactions.length,
+                      itemBuilder: (context, index) {
+                        final transaction =
+                            transactionState.transactions[index];
+                        final category = categoryState.categories.firstWhere(
+                          (c) => c.id == transaction.categoryId,
+                          orElse: () => Category(
+                            id: '',
+                            name: 'Unknown',
+                            icon: Icons.help.codePoint,
+                          ),
+                        );
+                        return _ActivityTile(
+                          icon: IconData(
+                            category.icon,
+                            fontFamily: 'MaterialIcons',
+                          ),
+                          iconBg: Color(0xFFB6F09C),
+                          title: transaction.title,
+                          subtitle:
+                              DateFormat.yMMMd().format(transaction.date),
+                          amount:
+                              '${transaction.type == TransactionType.income ? '+' : '-'} \$${transaction.amount.toStringAsFixed(2)}',
+                          amountColor:
+                              transaction.type == TransactionType.income
+                                  ? const Color(0xFF34C759)
+                                  : const Color(0xFFFF3B30),
+                        );
+                      },
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator());
                 },
-                separatorBuilder: (context, index) => const SizedBox(height: 10),
               );
             }
-            if (state is TransactionError) {
-              return Center(child: Text(state.message));
+            if (transactionState is TransactionError) {
+              return Center(child: Text(transactionState.message));
             }
-            return const Center(child: Text('No transactions yet.'));
+            return const _EmptyState();
           },
         ),
       ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.receipt_long,
+            size: 80,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No transactions yet',
+            style: Theme.of(context).textTheme.headline6?.copyWith(
+                  color: Colors.grey,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first transaction to get started',
+            style: Theme.of(context).textTheme.bodyText2?.copyWith(
+                  color: Colors.grey,
+                ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddTransactionScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Transaction'),
+          ),
+        ],
+      ),
     );
   }
 }
