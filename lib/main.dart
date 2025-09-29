@@ -3,9 +3,12 @@ import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
-import 'package:budget_tracker/homepage.dart';
+import 'package:budget_tracker/features/auth/screens/login_screen.dart';
+import 'package:budget_tracker/features/insights/insight_bloc.dart';
+import 'package:budget_tracker/features/subscriptions/subscription_bloc.dart';
 import 'package:budget_tracker/services/database_service.dart';
 import 'package:budget_tracker/services/notification_service.dart';
+import 'package:budget_tracker/services/transaction_analysis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,12 +47,24 @@ class MyApp extends StatelessWidget {
             databaseService: DatabaseService.instance,
           )..add(LoadGoals()),
         ),
+        BlocProvider(
+          create: (context) => SubscriptionBloc(
+            databaseService: DatabaseService.instance,
+            analysisService: TransactionAnalysisService(),
+          ),
+        ),
+        BlocProvider(
+          create: (context) => InsightBloc(
+            databaseService: DatabaseService.instance,
+            analysisService: TransactionAnalysisService(),
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'budget_tracker',
         debugShowCheckedModeBanner: false,
         theme: appTheme,
-        home: const HomePage(),
+        home: const LoginScreen(),
       ),
     );
   }
