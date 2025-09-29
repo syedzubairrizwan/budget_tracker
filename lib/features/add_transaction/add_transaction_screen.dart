@@ -17,6 +17,7 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
+  TransactionType _selectedType = TransactionType.expense;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +63,28 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 24),
+              SegmentedButton<TransactionType>(
+                segments: const <ButtonSegment<TransactionType>>[
+                  ButtonSegment<TransactionType>(
+                    value: TransactionType.expense,
+                    label: Text('Expense'),
+                    icon: Icon(Icons.arrow_downward),
+                  ),
+                  ButtonSegment<TransactionType>(
+                    value: TransactionType.income,
+                    label: Text('Income'),
+                    icon: Icon(Icons.arrow_upward),
+                  ),
+                ],
+                selected: <TransactionType>{_selectedType},
+                onSelectionChanged: (Set<TransactionType> newSelection) {
+                  setState(() {
+                    _selectedType = newSelection.first;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
               BlocBuilder<CategoryBloc, CategoryState>(
                 builder: (context, state) {
                   if (state is CategoryLoaded) {
@@ -100,6 +123,7 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                       amount: double.parse(_amountController.text),
                       date: DateTime.now(),
                       categoryId: _selectedCategoryId!,
+                      type: _selectedType,
                     );
                     context
                         .read<TransactionBloc>()

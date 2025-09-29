@@ -21,7 +21,15 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(path,
+        version: 2, onCreate: _createDB, onUpgrade: _onUpgrade);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+          "ALTER TABLE transactions ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'");
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -35,7 +43,8 @@ CREATE TABLE transactions (
   title $textType,
   amount $doubleType,
   date $textType,
-  categoryId $textType
+  categoryId $textType,
+  type $textType
   )
 ''');
 
@@ -74,7 +83,11 @@ CREATE TABLE goals (
 
   Future<List<Transaction>> getTransactions() async {
     final db = await instance.database;
-    final maps = await db.query('transactions');
+    final maps = await db.query('transactions', orderBy: 'date DESC');
+
+    if (maps.isEmpty) {
+      return [];
+    }
 
     return List.generate(maps.length, (i) {
       return Transaction.fromMap(maps[i]);
@@ -110,6 +123,10 @@ CREATE TABLE goals (
     final db = await instance.database;
     final maps = await db.query('categories');
 
+    if (maps.isEmpty) {
+      return [];
+    }
+
     return List.generate(maps.length, (i) {
       return Category.fromMap(maps[i]);
     });
@@ -144,6 +161,10 @@ CREATE TABLE goals (
     final db = await instance.database;
     final maps = await db.query('budgets');
 
+    if (maps.isEmpty) {
+      return [];
+    }
+
     return List.generate(maps.length, (i) {
       return Budget.fromMap(maps[i]);
     });
@@ -177,6 +198,10 @@ CREATE TABLE goals (
   Future<List<Goal>> getGoals() async {
     final db = await instance.database;
     final maps = await db.query('goals');
+
+    if (maps.isEmpty) {
+      return [];
+    }
 
     return List.generate(maps.length, (i) {
       return Goal.fromMap(maps[i]);
