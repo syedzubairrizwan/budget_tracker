@@ -8,6 +8,11 @@ class Transaction {
   final String categoryId;
   final TransactionType type;
 
+  // Split Bill fields
+  final bool isSplit;
+  final String? splitWith;
+  final double? splitAmount;
+
   Transaction({
     required this.id,
     required this.title,
@@ -15,6 +20,9 @@ class Transaction {
     required this.date,
     required this.categoryId,
     this.type = TransactionType.expense,
+    this.isSplit = false,
+    this.splitWith,
+    this.splitAmount,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +33,9 @@ class Transaction {
       'date': date.toIso8601String(),
       'categoryId': categoryId,
       'type': type.name,
+      'isSplit': isSplit ? 1 : 0,
+      'splitWith': splitWith,
+      'splitAmount': splitAmount,
     };
   }
 
@@ -36,6 +47,9 @@ class Transaction {
       date: DateTime.parse(map['date']),
       categoryId: map['categoryId'],
       type: TransactionType.values.byName(map['type'] ?? 'expense'),
+      isSplit: map['isSplit'] == 1,
+      splitWith: map['splitWith'],
+      splitAmount: map['splitAmount'],
     );
   }
 }

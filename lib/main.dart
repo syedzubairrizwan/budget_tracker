@@ -1,4 +1,5 @@
 import 'package:budget_tracker/core/theme.dart';
+import 'package:budget_tracker/core/theme_bloc.dart';
 import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
@@ -11,12 +12,18 @@ import 'package:budget_tracker/services/notification_service.dart';
 import 'package:budget_tracker/services/transaction_analysis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseService.instance.database;
   await NotificationService().init();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeBloc(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -60,11 +67,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ],
-      child: MaterialApp(
-        title: 'budget_tracker',
-        debugShowCheckedModeBanner: false,
-        theme: appTheme,
-        home: const LoginScreen(),
+      child: Consumer<ThemeBloc>(
+        builder: (context, themeBloc, child) {
+          return MaterialApp(
+            title: 'budget_tracker',
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeBloc.themeMode,
+            home: const LoginScreen(),
+          );
+        },
       ),
     );
   }

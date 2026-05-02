@@ -13,6 +13,7 @@ void main() {
         Category(id: 'food', name: 'Food & Dining', icon: ''),
         Category(id: 'transport', name: 'Transportation', icon: ''),
         Category(id: 'shopping', name: 'Shopping', icon: ''),
+        Category(id: 'other', name: 'Other', icon: ''),
       ];
     });
 
@@ -26,14 +27,19 @@ void main() {
       expect(predictedCategoryId, 'transport');
     });
 
-    test('should return null if no keyword matches', () async {
+    test('should return "other" category if no keyword matches', () async {
       final predictedCategoryId = await aiService.predictCategory('A random purchase', categories);
-      expect(predictedCategoryId, isNull);
+      expect(predictedCategoryId, 'other');
     });
 
     test('should return null if category list is empty', () async {
       final predictedCategoryId = await aiService.predictCategory('My morning coffee', []);
       expect(predictedCategoryId, isNull);
+    });
+
+    test('should predict Shopping for Walmart', () async {
+      final predictedCategoryId = await aiService.predictCategory('Walmart checkout', categories);
+      expect(predictedCategoryId, 'shopping');
     });
   });
 }

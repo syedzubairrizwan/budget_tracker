@@ -18,7 +18,7 @@ class MockTransactionBloc extends MockBloc<TransactionEvent, TransactionState>
 void main() {
   late MockCategoryBloc mockCategoryBloc;
   late MockTransactionBloc mockTransactionBloc;
-  final testCategory = Category(id: '1', name: 'Food', icon: Icons.fastfood.codePoint.toString());
+  final testCategory = Category(id: '1', name: 'Food', icon: 'restaurant');
   final testCategories = [testCategory];
 
   setUpAll(() {
@@ -55,6 +55,10 @@ void main() {
   }
 
   Future<void> pumpScreen(WidgetTester tester) async {
+    // Set a larger surface size to avoid overflow issues during tests
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pumpAndSettle();
   }
@@ -74,7 +78,9 @@ void main() {
     await pumpScreen(tester);
     await tester.enterText(find.byType(TextFormField).at(0), 'Groceries');
     await tester.enterText(find.byType(TextFormField).at(1), '-50');
-    await tester.tap(find.byType(ElevatedButton));
+
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Add Transaction'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Transaction'));
     await tester.pumpAndSettle();
 
     expect(find.text('Please enter a positive amount'), findsOneWidget);
@@ -87,7 +93,8 @@ void main() {
     await fillForm(tester);
 
     // Expense is selected by default
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Add Transaction'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Transaction'));
     await tester.pumpAndSettle();
 
     final captured =
@@ -106,7 +113,8 @@ void main() {
     await tester.tap(find.text('Income'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Add Transaction'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add Transaction'));
     await tester.pumpAndSettle();
 
     final captured =

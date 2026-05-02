@@ -18,11 +18,11 @@ import 'package:budget_tracker/features/insights/insight_bloc.dart';
 import 'package:budget_tracker/features/insights/insight_event.dart';
 import 'package:budget_tracker/features/insights/insights_section.dart';
 import 'package:budget_tracker/models/transaction.dart';
+import 'package:budget_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-//import 'package:budgeting_app/core/theme.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -45,7 +45,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
       body: _getBody(),
       bottomNavigationBar: _CustomBottomNavBar(
         selectedIndex: _selectedIndex,
@@ -138,13 +137,13 @@ class _HeaderRow extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               padding: const EdgeInsets.all(8),
               child: const Icon(
                 Icons.grid_view_rounded,
-                color: AppColors.primaryColor,
+                color: Colors.white,
               ),
             ),
             Row(
@@ -231,9 +230,9 @@ class _HeaderRow extends StatelessWidget {
           },
           decoration: InputDecoration(
             hintText: 'Search transactions...',
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: const Icon(Icons.search, color: Colors.grey),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.grey[800],
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -297,10 +296,25 @@ class _ActionButtonsRow extends StatelessWidget {
         _ActionButton(
           icon: Icons.send_rounded,
           label: 'Transfer',
-          onTap: () {},
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Transfer feature coming soon!')),
+            );
+          },
         ),
         const SizedBox(width: 20),
-        _ActionButton(icon: Icons.qr_code_scanner, label: 'Scan', onTap: () {}),
+        _ActionButton(
+          icon: Icons.qr_code_scanner,
+          label: 'Scan',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddTransactionScreen(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -427,7 +441,7 @@ class _SummaryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -494,7 +508,7 @@ class _RecentActivitySection extends StatelessWidget {
         Text(
           'Recent Activity',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.textDark,
+                color: Theme.of(context).textTheme.titleLarge?.color,
                 fontWeight: FontWeight.bold,
               ),
         ),
@@ -531,16 +545,29 @@ class _RecentActivitySection extends StatelessWidget {
                             int.tryParse(category.icon) ?? Icons.help.codePoint,
                             fontFamily: 'MaterialIcons',
                           ),
-                          iconBg: Color(0xFFB6F09C),
+                          iconBg: AppColors.primaryColor,
                           title: transaction.title,
-                          subtitle:
-                              DateFormat.yMMMd().format(transaction.date),
+                          subtitle: transaction.isSplit
+                              ? 'Split with ${transaction.splitWith}'
+                              : DateFormat.yMMMd().format(transaction.date),
                           amount:
                               '${transaction.type == TransactionType.income ? '+' : '-'} \$${transaction.amount.toStringAsFixed(2)}',
                           amountColor:
                               transaction.type == TransactionType.income
                                   ? const Color(0xFF34C759)
                                   : const Color(0xFFFF3B30),
+                          isSplit: transaction.isSplit,
+                          onRemind: () {
+                            NotificationService().showNotification(
+                              transaction.hashCode,
+                              'Split Bill Reminder',
+                              'Reminder: ${transaction.splitWith} owes you \$${transaction.splitAmount?.toStringAsFixed(2)} for ${transaction.title}',
+                              '',
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Reminder sent to ${transaction.splitWith}!')),
+                            );
+                          },
                         );
                       },
                       separatorBuilder: (context, index) =>
@@ -616,6 +643,9 @@ class _ActivityTile extends StatelessWidget {
   final String subtitle;
   final String amount;
   final Color amountColor;
+  final bool isSplit;
+  final VoidCallback? onRemind;
+
   const _ActivityTile({
     required this.icon,
     required this.iconBg,
@@ -623,6 +653,8 @@ class _ActivityTile extends StatelessWidget {
     required this.subtitle,
     required this.amount,
     required this.amountColor,
+    this.isSplit = false,
+    this.onRemind,
   });
 
   @override
@@ -630,7 +662,7 @@ class _ActivityTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -644,11 +676,11 @@ class _ActivityTile extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: iconBg,
+              color: iconBg.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: iconBg, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -659,7 +691,6 @@ class _ActivityTile extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
                   ),
                 ),
                 Text(
@@ -671,12 +702,26 @@ class _ActivityTile extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            amount,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: amountColor,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: amountColor,
+                    ),
+              ),
+              if (isSplit)
+                IconButton(
+                  icon: const Icon(Icons.notifications_active,
+                      size: 20, color: AppColors.primaryColor),
+                  onPressed: onRemind,
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                  tooltip: 'Remind person',
+                ),
+            ],
           ),
         ],
       ),
@@ -694,7 +739,7 @@ class _CustomBottomNavBar extends StatelessWidget {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
-      color: Colors.white,
+      color: Theme.of(context).cardTheme.color,
       elevation: 8,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
