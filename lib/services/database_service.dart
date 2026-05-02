@@ -22,7 +22,7 @@ class DatabaseService {
     final path = join(dbPath, filePath);
 
     final db = await openDatabase(path,
-        version: 2, onCreate: _createDB, onUpgrade: _onUpgrade);
+        version: 3, onCreate: _createDB, onUpgrade: _onUpgrade);
     
     // Check if categories exist, if not insert default ones
     await _ensureDefaultCategories(db);
@@ -34,6 +34,11 @@ class DatabaseService {
     if (oldVersion < 2) {
       await db.execute(
           "ALTER TABLE transactions ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'");
+    }
+    if (oldVersion < 3) {
+      await db.execute("ALTER TABLE transactions ADD COLUMN isSplit INTEGER DEFAULT 0");
+      await db.execute("ALTER TABLE transactions ADD COLUMN splitWith TEXT");
+      await db.execute("ALTER TABLE transactions ADD COLUMN splitAmount REAL");
     }
   }
 
@@ -49,7 +54,10 @@ CREATE TABLE transactions (
   amount $doubleType,
   date $textType,
   categoryId $textType,
-  type $textType
+  type $textType,
+  isSplit INTEGER DEFAULT 0,
+  splitWith TEXT,
+  splitAmount REAL
   )
 ''');
 

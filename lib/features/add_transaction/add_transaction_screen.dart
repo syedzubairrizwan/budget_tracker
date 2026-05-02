@@ -21,9 +21,14 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
+  final _splitWithController = TextEditingController();
+  final _splitAmountController = TextEditingController();
+
   DateTime _selectedDate = DateTime.now();
   String? _selectedCategoryId;
   TransactionType _selectedType = TransactionType.expense;
+  bool _isSplit = false;
+
   final _ocrService = OcrService();
   final _aiService = AiService();
   final _analysisService = TransactionAnalysisService();
@@ -33,16 +38,27 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
     super.initState();
     _titleController.addListener(_onTitleChanged);
     _dateController.text = DateFormat.yMMMd().format(_selectedDate);
+    _amountController.addListener(_updateSplitAmount);
   }
 
   @override
   void dispose() {
     _ocrService.dispose();
     _titleController.removeListener(_onTitleChanged);
+    _amountController.removeListener(_updateSplitAmount);
     _titleController.dispose();
     _amountController.dispose();
     _dateController.dispose();
+    _splitWithController.dispose();
+    _splitAmountController.dispose();
     super.dispose();
+  }
+
+  void _updateSplitAmount() {
+    if (_isSplit) {
+      final total = double.tryParse(_amountController.text) ?? 0;
+      _splitAmountController.text = (total / 2).toStringAsFixed(2);
+    }
   }
 
   Future<void> _scanReceipt() async {
@@ -93,6 +109,9 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
         date: _selectedDate,
         categoryId: _selectedCategoryId!,
         type: _selectedType,
+        isSplit: _isSplit,
+        splitWith: _isSplit ? _splitWithController.text : null,
+        splitAmount: _isSplit ? double.tryParse(_splitAmountController.text) : null,
       );
       context
           .read<TransactionBloc>()
@@ -113,6 +132,9 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
       date: _selectedDate,
       categoryId: _selectedCategoryId!,
       type: _selectedType,
+      isSplit: _isSplit,
+      splitWith: _isSplit ? _splitWithController.text : null,
+      splitAmount: _isSplit ? double.tryParse(_splitAmountController.text) : null,
     );
 
     final transactionState = context.read<TransactionBloc>().state;
@@ -211,6 +233,7 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
                 controller: _titleController,
@@ -276,33 +299,62 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              SwitchListTile(
+                title: const Text('Split Bill'),
+                subtitle: const Text('Share this expense with someone else'),
+                value: _isSplit,
+                onChanged: (bool value) {
+                  setState(() {
+                    _isSplit = value;
+                    if (_isSplit) _updateSplitAmount();
+                  });
+                },
+              ),
+              if (_isSplit) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _splitWithController,
+                  decoration: const InputDecoration(
+                    labelText: 'Split With (Name)',
+                    prefixIcon: Icon(Icons.person_add),
+                  ),
+                  validator: (value) {
+                    if (_isSplit && (value == null || value.isEmpty)) {
+                      return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _splitAmountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Their Share',
+                    prefixIcon: Icon(Icons.money),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (_isSplit && (value == null || value.isEmpty)) {
+                      return 'Please enter an amount';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+              const SizedBox(height: 24),
+              const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
               BlocBuilder<CategoryBloc, CategoryState>(
                 builder: (context, state) {
                   if (state is CategoryLoaded) {
                     if (state.categories.isEmpty) {
-                      return Column(
-                        children: [
-                          const Text(
-                            'No categories available. Please add some categories first.',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              // Navigate to manage categories
-                            },
-                            child: const Text('Manage Categories'),
-                          ),
-                        ],
-                      );
+                      return const Text('No categories available.');
                     }
                     return DropdownButtonFormField<String>(
                       value: _selectedCategoryId,
                       hint: const Text('Select Category'),
                       decoration: const InputDecoration(
-                        labelText: 'Category',
                         border: OutlineInputBorder(),
                       ),
                       items: state.categories.map((category) {
@@ -332,47 +384,30 @@ class AddTransactionScreenState extends State<AddTransactionScreen> {
                         return null;
                       },
                     );
-                  } else if (state is CategoryLoading) {
-                    return const Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('Loading categories...'),
-                      ],
-                    );
-                  } else if (state is CategoryError) {
-                    return Column(
-                      children: [
-                        Text(
-                          'Error loading categories: ${state.message}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<CategoryBloc>().add(LoadCategories());
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    );
                   }
                   return const CircularProgressIndicator();
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _scanReceipt,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Scan Receipt'),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _scanReceipt,
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('Scan Receipt'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[200],
+                        foregroundColor: Colors.black87,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: _handleAddTransaction,
-                    child: const Text('Add'),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _handleAddTransaction,
+                      child: const Text('Add Transaction'),
+                    ),
                   ),
                 ],
               ),

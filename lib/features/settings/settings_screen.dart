@@ -1,6 +1,9 @@
 import 'package:budget_tracker/core/theme_bloc.dart';
+import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
+import 'package:budget_tracker/services/export_service.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -244,6 +247,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _exportData(BuildContext context) async {
+    final transactionState = context.read<TransactionBloc>().state;
+    if (transactionState is TransactionLoaded) {
+      final exportService = ExportService();
+      try {
+        final file = await exportService.exportToCSV(transactionState.transactions);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Data exported to ${file.path}')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Export failed: $e')),
+          );
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No transactions to export')),
+      );
+    }
+  }
+
   Widget _AppSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -268,6 +296,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _SettingsTile(
+            icon: Icons.file_download,
+            title: 'Export Transactions (CSV)',
+            subtitle: 'Download your data',
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _exportData(context),
+          ),
           _SettingsTile(
             icon: Icons.backup,
             title: 'Backup & Sync',

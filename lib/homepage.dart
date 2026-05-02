@@ -18,6 +18,7 @@ import 'package:budget_tracker/features/insights/insight_bloc.dart';
 import 'package:budget_tracker/features/insights/insight_event.dart';
 import 'package:budget_tracker/features/insights/insights_section.dart';
 import 'package:budget_tracker/models/transaction.dart';
+import 'package:budget_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -546,14 +547,27 @@ class _RecentActivitySection extends StatelessWidget {
                           ),
                           iconBg: AppColors.primaryColor,
                           title: transaction.title,
-                          subtitle:
-                              DateFormat.yMMMd().format(transaction.date),
+                          subtitle: transaction.isSplit
+                              ? 'Split with ${transaction.splitWith}'
+                              : DateFormat.yMMMd().format(transaction.date),
                           amount:
                               '${transaction.type == TransactionType.income ? '+' : '-'} \$${transaction.amount.toStringAsFixed(2)}',
                           amountColor:
                               transaction.type == TransactionType.income
                                   ? const Color(0xFF34C759)
                                   : const Color(0xFFFF3B30),
+                          isSplit: transaction.isSplit,
+                          onRemind: () {
+                            NotificationService().showNotification(
+                              transaction.hashCode,
+                              'Split Bill Reminder',
+                              'Reminder: ${transaction.splitWith} owes you \$${transaction.splitAmount?.toStringAsFixed(2)} for ${transaction.title}',
+                              '',
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Reminder sent to ${transaction.splitWith}!')),
+                            );
+                          },
                         );
                       },
                       separatorBuilder: (context, index) =>
@@ -629,6 +643,9 @@ class _ActivityTile extends StatelessWidget {
   final String subtitle;
   final String amount;
   final Color amountColor;
+  final bool isSplit;
+  final VoidCallback? onRemind;
+
   const _ActivityTile({
     required this.icon,
     required this.iconBg,
@@ -636,6 +653,8 @@ class _ActivityTile extends StatelessWidget {
     required this.subtitle,
     required this.amount,
     required this.amountColor,
+    this.isSplit = false,
+    this.onRemind,
   });
 
   @override
@@ -683,12 +702,26 @@ class _ActivityTile extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            amount,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: amountColor,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: amountColor,
+                    ),
+              ),
+              if (isSplit)
+                IconButton(
+                  icon: const Icon(Icons.notifications_active,
+                      size: 20, color: AppColors.primaryColor),
+                  onPressed: onRemind,
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                  tooltip: 'Remind person',
+                ),
+            ],
           ),
         ],
       ),
