@@ -1,5 +1,7 @@
+import 'package:budget_tracker/core/theme_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:budget_tracker/core/constants.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,20 +12,16 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
-  bool _biometricEnabled = false;
+  final bool _biometricEnabled = false;
   String _currency = 'USD';
   String _language = 'English';
 
   @override
   Widget build(BuildContext context) {
+    final themeBloc = Provider.of<ThemeBloc>(context);
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: AppColors.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -32,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             _ProfileSection(),
             const SizedBox(height: 24),
-            _PreferencesSection(),
+            _PreferencesSection(themeBloc),
             const SizedBox(height: 24),
             _SecuritySection(),
             const SizedBox(height: 24),
@@ -49,7 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -66,7 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Profile',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 16),
@@ -75,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: AppColors.primaryColor.withValues(alpha: 0.1),
-                child: Icon(
+                child: const Icon(
                   Icons.person,
                   size: 30,
                   color: AppColors.primaryColor,
@@ -105,7 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: () {
                   // Navigate to edit profile
                 },
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit,
                   color: AppColors.primaryColor,
                 ),
@@ -117,11 +114,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _PreferencesSection() {
+  Widget _PreferencesSection(ThemeBloc themeBloc) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -138,7 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Preferences',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 16),
@@ -161,11 +157,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Dark Mode',
             subtitle: 'Switch to dark theme',
             trailing: Switch(
-              value: _darkModeEnabled,
+              value: themeBloc.themeMode == ThemeMode.dark,
               onChanged: (value) {
-                setState(() {
-                  _darkModeEnabled = value;
-                });
+                themeBloc.toggleTheme(value);
               },
               activeColor: AppColors.primaryColor,
             ),
@@ -193,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -210,7 +204,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'Security',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 16),
@@ -221,9 +214,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(
               value: _biometricEnabled,
               onChanged: (value) {
-                setState(() {
-                  _biometricEnabled = value;
-                });
+                // setState(() {
+                //   _biometricEnabled = value;
+                // });
               },
               activeColor: AppColors.primaryColor,
             ),
@@ -255,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -272,7 +265,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'App',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 16),
@@ -312,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -329,7 +321,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'About',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
           ),
           const SizedBox(height: 16),

@@ -1,48 +1,40 @@
 import 'package:budget_tracker/models/category.dart';
 
 class AiService {
-  // This is a mock implementation of an AI service.
-  // In a real app, this would be replaced with a proper on-device ML model.
+  // Enhanced mock implementation of an AI service.
+  // In a real app, this would use a more sophisticated model or a cloud API.
   Future<String?> predictCategory(String title, List<Category> categories) async {
-    await Future.delayed(const Duration(milliseconds: 100)); // Simulate processing time
+    await Future.delayed(const Duration(milliseconds: 50)); // Fast response
 
     final lowerCaseTitle = title.toLowerCase();
 
-    // Simple keyword-based matching
-    if (lowerCaseTitle.contains('coffee') || lowerCaseTitle.contains('restaurant') || lowerCaseTitle.contains('food')) {
-      return _findCategoryIdByName('Food & Dining', categories);
-    }
-    if (lowerCaseTitle.contains('gas') || lowerCaseTitle.contains('uber') || lowerCaseTitle.contains('lyft')) {
-      return _findCategoryIdByName('Transportation', categories);
-    }
-    if (lowerCaseTitle.contains('amazon') || lowerCaseTitle.contains('walmart') || lowerCaseTitle.contains('target')) {
-      return _findCategoryIdByName('Shopping', categories);
-    }
-    if (lowerCaseTitle.contains('movie') || lowerCaseTitle.contains('concert')) {
-      return _findCategoryIdByName('Entertainment', categories);
-    }
-    if (lowerCaseTitle.contains('rent') || lowerCaseTitle.contains('electricity') || lowerCaseTitle.contains('internet')) {
-      return _findCategoryIdByName('Bills & Utilities', categories);
-    }
-    if (lowerCaseTitle.contains('doctor') || lowerCaseTitle.contains('pharmacy')) {
-      return _findCategoryIdByName('Healthcare', categories);
-    }
-    if (lowerCaseTitle.contains('udemy') || lowerCaseTitle.contains('coursera')) {
-      return _findCategoryIdByName('Education', categories);
-    }
-    if (lowerCaseTitle.contains('flight') || lowerCaseTitle.contains('hotel')) {
-      return _findCategoryIdByName('Travel', categories);
-    }
-    if (lowerCaseTitle.contains('salary')) {
-      return _findCategoryIdByName('Salary', categories);
+    // Map keywords to category names
+    final Map<String, List<String>> keywordMap = {
+      'Food & Dining': ['coffee', 'restaurant', 'food', 'starbucks', 'mcdonald', 'burger', 'pizza', 'cafe', 'dinner', 'lunch', 'eat'],
+      'Transportation': ['gas', 'uber', 'lyft', 'fuel', 'petrol', 'train', 'bus', 'taxi', 'parking', 'garage'],
+      'Shopping': ['amazon', 'walmart', 'target', 'ebay', 'clothes', 'shoe', 'mall', 'store', 'grocery', 'supermarket'],
+      'Entertainment': ['movie', 'concert', 'cinema', 'netflix', 'spotify', 'gaming', 'steam', 'theatre', 'zoo'],
+      'Bills & Utilities': ['rent', 'electricity', 'internet', 'water', 'gas bill', 'insurance', 'phone', 'mobile', 'subscription'],
+      'Healthcare': ['doctor', 'pharmacy', 'hospital', 'medical', 'dentist', 'clinic', 'health', 'medicine'],
+      'Education': ['udemy', 'coursera', 'book', 'school', 'tuition', 'university', 'course', 'training'],
+      'Travel': ['flight', 'hotel', 'airbnb', 'vacation', 'resort', 'booking', 'airline', 'visa'],
+      'Salary': ['salary', 'paycheck', 'payroll', 'bonus'],
+      'Freelance': ['upwork', 'fiverr', 'contract', 'freelance', 'project'],
+      'Investment': ['dividend', 'stock', 'crypto', 'bitcoin', 'trading', 'investment', 'interest'],
+    };
+
+    for (var entry in keywordMap.entries) {
+      if (entry.value.any((keyword) => lowerCaseTitle.contains(keyword))) {
+        return _findCategoryIdByName(entry.key, categories);
+      }
     }
 
-    return null; // No prediction
+    return _findCategoryIdByName('Other', categories);
   }
 
   String? _findCategoryIdByName(String name, List<Category> categories) {
     try {
-      return categories.firstWhere((c) => c.name == name).id;
+      return categories.firstWhere((c) => c.name.toLowerCase() == name.toLowerCase()).id;
     } catch (e) {
       return null;
     }
