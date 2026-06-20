@@ -1,4 +1,3 @@
-import 'package:budget_tracker/models/budget.dart';
 import 'package:budget_tracker/services/notification_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:budget_tracker/models/transaction.dart';
@@ -15,9 +14,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc({
     required DatabaseService databaseService,
     required NotificationService notificationService,
-  })  : _databaseService = databaseService,
-        _notificationService = notificationService,
-        super(TransactionInitial()) {
+  }) : _databaseService = databaseService,
+       _notificationService = notificationService,
+       super(TransactionInitial()) {
     on<LoadTransactions>(_onLoadTransactions);
     on<AddTransaction>(_onAddTransaction);
     on<UpdateTransaction>(_onUpdateTransaction);
@@ -26,7 +25,9 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   }
 
   void _onLoadTransactions(
-      LoadTransactions event, Emitter<TransactionState> emit) async {
+    LoadTransactions event,
+    Emitter<TransactionState> emit,
+  ) async {
     emit(TransactionLoading());
     try {
       final transactions = await _databaseService.getTransactions();
@@ -37,23 +38,18 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   }
 
   void _onAddTransaction(
-      AddTransaction event, Emitter<TransactionState> emit) async {
+    AddTransaction event,
+    Emitter<TransactionState> emit,
+  ) async {
     try {
       await _databaseService.insertTransaction(event.transaction);
       add(LoadTransactions());
 
+      // Trigger automatic budget recalculation and check for overspend warnings
       final budgets = await _databaseService.getBudgets();
       for (var budget in budgets) {
         if (event.transaction.categoryId == budget.categoryId) {
-          final updatedBudget = Budget(
-            id: budget.id,
-            categoryId: budget.categoryId,
-            amount: budget.amount,
-            spentAmount: budget.spentAmount + event.transaction.amount.abs(),
-          );
-          await _databaseService.updateBudget(updatedBudget);
-
-          if (updatedBudget.spentAmount / updatedBudget.amount > 0.9) {
+          if (budget.amount > 0 && budget.spentAmount / budget.amount > 0.9) {
             _notificationService.showNotification(
               0,
               'Budget Alert',
@@ -69,39 +65,55 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   }
 
   void _onUpdateTransaction(
-      UpdateTransaction event, Emitter<TransactionState> emit) async {
+    UpdateTransaction event,
+    Emitter<TransactionState> emit,
+  ) async {
     try {
       await _databaseService.updateTransaction(event.transaction);
       add(LoadTransactions());
+      // Trigger budget recalculation after update
+      await _databaseService.getBudgets();
     } catch (e) {
       emit(TransactionError(message: e.toString()));
     }
   }
 
   void _onDeleteTransaction(
-      DeleteTransaction event, Emitter<TransactionState> emit) async {
+    DeleteTransaction event,
+    Emitter<TransactionState> emit,
+  ) async {
     try {
       await _databaseService.deleteTransaction(event.id);
       add(LoadTransactions());
+      // Trigger budget recalculation after deletion
+      await _databaseService.getBudgets();
     } catch (e) {
       emit(TransactionError(message: e.toString()));
     }
   }
 
   void _onSearchTransactions(
-      SearchTransactions event, Emitter<TransactionState> emit) async {
+    SearchTransactions event,
+    Emitter<TransactionState> emit,
+  ) async {
     final currentState = state;
     if (currentState is TransactionLoaded) {
       if (event.query.isEmpty) {
         add(LoadTransactions());
       } else {
         final filteredTransactions = currentState.transactions
-            .where((transaction) => transaction.title
-                .toLowerCase()
-                .contains(event.query.toLowerCase()))
+            .where(
+              (transaction) => transaction.title.toLowerCase().contains(
+                event.query.toLowerCase(),
+              ),
+            )
             .toList();
-        emit(TransactionLoaded(
-            transactions: filteredTransactions, searchQuery: event.query));
+        emit(
+          TransactionLoaded(
+            transactions: filteredTransactions,
+            searchQuery: event.query,
+          ),
+        );
       }
     }
   }

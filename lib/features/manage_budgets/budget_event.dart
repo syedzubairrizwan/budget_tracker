@@ -35,3 +35,12 @@ class DeleteBudget extends BudgetEvent {
   @override
   List<Object> get props => [id];
 }
+
+class ApplyTemplate extends BudgetEvent {
+  final BudgetTemplate template;
+
+  const ApplyTemplate({required this.template});
+
+  @override
+  List<Object> get props => [template];
+}

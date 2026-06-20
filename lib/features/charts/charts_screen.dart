@@ -169,7 +169,7 @@ class _SimpleBarChart extends StatelessWidget {
     final incomeHeight = maxValue > 0 ? (income / maxValue) * 100 : 0.0;
     final expensesHeight = maxValue > 0 ? (expenses / maxValue) * 100 : 0.0;
 
-    return Container(
+    return SizedBox(
       height: 120,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -462,7 +462,7 @@ class _MonthlyTrendsCard extends StatelessWidget {
                   monthlyData[monthKey] = monthTotal;
                 }
 
-                return Container(
+                return SizedBox(
                   height: 120,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,

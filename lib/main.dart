@@ -4,23 +4,27 @@ import 'package:budget_tracker/features/add_transaction/transaction_bloc.dart';
 import 'package:budget_tracker/features/manage_categories/category_bloc.dart';
 import 'package:budget_tracker/features/manage_budgets/budget_bloc.dart';
 import 'package:budget_tracker/features/manage_goals/goal_bloc.dart';
-import 'package:budget_tracker/features/auth/screens/login_screen.dart';
+import 'package:budget_tracker/features/auth/screens/auth_gate.dart';
 import 'package:budget_tracker/features/insights/insight_bloc.dart';
 import 'package:budget_tracker/features/subscriptions/subscription_bloc.dart';
+import 'package:budget_tracker/features/planned_payments/planned_payment_bloc.dart';
+import 'package:budget_tracker/features/planned_payments/planned_payment_repository.dart';
 import 'package:budget_tracker/services/database_service.dart';
 import 'package:budget_tracker/services/notification_service.dart';
 import 'package:budget_tracker/services/transaction_analysis_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await DatabaseService.instance.database;
   await NotificationService().init();
   runApp(
     ChangeNotifierProvider(
-      create: (context) => ThemeBloc(),
+      create: (_) => ThemeBloc(),
       child: const MyApp(),
     ),
   );
@@ -40,19 +44,19 @@ class MyApp extends StatelessWidget {
           )..add(LoadTransactions()),
         ),
         BlocProvider(
-          create: (context) => CategoryBloc(
-            databaseService: DatabaseService.instance,
-          )..add(LoadCategories()),
+          create: (context) =>
+              CategoryBloc(databaseService: DatabaseService.instance)
+                ..add(LoadCategories()),
         ),
         BlocProvider(
-          create: (context) => BudgetBloc(
-            databaseService: DatabaseService.instance,
-          )..add(LoadBudgets()),
+          create: (context) =>
+              BudgetBloc(databaseService: DatabaseService.instance)
+                ..add(LoadBudgets()),
         ),
         BlocProvider(
-          create: (context) => GoalBloc(
-            databaseService: DatabaseService.instance,
-          )..add(LoadGoals()),
+          create: (context) =>
+              GoalBloc(databaseService: DatabaseService.instance)
+                ..add(LoadGoals()),
         ),
         BlocProvider(
           create: (context) => SubscriptionBloc(
@@ -66,6 +70,12 @@ class MyApp extends StatelessWidget {
             analysisService: TransactionAnalysisService(),
           ),
         ),
+        BlocProvider(
+          create: (context) => PlannedPaymentBloc(
+            repository: PlannedPaymentRepository(),
+            notificationService: NotificationService(),
+          )..add(LoadPlannedPayments()),
+        ),
       ],
       child: Consumer<ThemeBloc>(
         builder: (context, themeBloc, child) {
@@ -75,7 +85,7 @@ class MyApp extends StatelessWidget {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeBloc.themeMode,
-            home: const LoginScreen(),
+            home: const AuthGate(),
           );
         },
       ),

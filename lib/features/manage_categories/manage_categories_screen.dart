@@ -9,22 +9,33 @@ class ManageCategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Categories'),
-      ),
+      appBar: AppBar(title: const Text('Manage Categories')),
       body: BlocBuilder<CategoryBloc, CategoryState>(
         builder: (context, state) {
           if (state is CategoryLoading) {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is CategoryLoaded) {
+            if (state.categories.isEmpty) {
+              return const Center(
+                child: Text('No categories yet. Tap + to add one.'),
+              );
+            }
             return ListView.builder(
               itemCount: state.categories.length,
               itemBuilder: (context, index) {
                 final category = state.categories[index];
                 return ListTile(
-                  leading: Icon(IconData(int.parse(category.icon),
-                      fontFamily: 'MaterialIcons')),
+                  leading: CircleAvatar(
+                    backgroundColor: Color(
+                      int.parse(category.color.replaceAll('#', ''), radix: 16) +
+                          0xFF000000,
+                    ),
+                    child: Text(
+                      category.icon,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ),
                   title: Text(category.name),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -44,9 +55,9 @@ class ManageCategoriesScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () {
-                          context
-                              .read<CategoryBloc>()
-                              .add(DeleteCategory(id: category.id));
+                          context.read<CategoryBloc>().add(
+                            DeleteCategory(id: category.id),
+                          );
                         },
                       ),
                     ],
@@ -65,9 +76,7 @@ class ManageCategoriesScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AddCategoryScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AddCategoryScreen()),
           );
         },
         child: const Icon(Icons.add),
